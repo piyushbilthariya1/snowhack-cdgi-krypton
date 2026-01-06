@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
+const userController = require("../controllers/userController");
+const checkAuth = require("../middleware/auth"); // Ensure this is created
 
-// Simple registration for Hackathon demo
-router.post("/register", async (req, res) => {
-  const { name, email } = req.body;
-  const user = await User.create({ name, email });
-  res.json(user);
-});
+// Public Route
+router.post("/register", userController.registerUser);
+
+// Protected Route (Requires x-nano-key header)
+router.get("/profile", checkAuth, userController.getProfile);
 
 module.exports = router;

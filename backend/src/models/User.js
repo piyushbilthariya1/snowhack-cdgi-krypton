@@ -3,14 +3,28 @@ const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    nanoKey: { type: String, unique: true },
-    walletBalance: { type: Number, default: 100.0 }, // Initial credits
+    name: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    nanoKey: {
+      type: String,
+      unique: true,
+      index: true,
+    },
+    walletBalance: {
+      type: Number,
+      default: 100.0,
+      min: [0, "Insufficient balance"],
+    },
     usageHistory: [
       {
-        apiName: String,
-        cost: Number,
+        apiName: { type: String, required: true },
+        cost: { type: Number, required: true },
         timestamp: { type: Date, default: Date.now },
       },
     ],
@@ -18,12 +32,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Production Hack: Generate unique nk_ key before saving
-userSchema.pre("save", function (next) {
+// Modern Async Hook (Fixes the "next is not a function" error)
+userSchema.pre("save", async function () {
   if (!this.nanoKey) {
     this.nanoKey = `nk_${crypto.randomBytes(16).toString("hex")}`;
   }
-  next();
+  // Mongoose knows it's done when the function finishes because it's async
 });
 
 module.exports = mongoose.model("User", userSchema);
