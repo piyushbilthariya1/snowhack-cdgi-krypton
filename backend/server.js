@@ -12,7 +12,17 @@ const PORT = process.env.PORT || 5000;
 
 // --- IN-MEMORY LEDGER (For Demo Reliability) ---
 // Since local Mongo is down and remote has SSL issues, we use RAM.
-const USERS = []; // Array of { nanoKey, balance, logs: [] }
+const USERS = [
+    // Default user for testing
+    {
+        email: 'test@atomapi.dev',
+        password: 'password123',
+        nanoKey: 'nk-demo-key',
+        balance: 100.00,
+        dailyLimit: null,
+        logs: []
+    }
+];
 
 // --- The Vault (Mock Keys) ---
 const MASTER_KEYS = {
@@ -29,15 +39,43 @@ const COSTS = {
 
 app.post('/v1/auth/register', async (req, res) => {
     try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, error: "Email and password are required" });
+        }
+
+        const existingUser = USERS.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: "Email already registered" });
+        }
+
         const nanoKey = 'nk-' + Math.random().toString(36).substring(7);
         const user = {
+            email,
+            password, // In a real app, hash this!
             nanoKey,
             balance: 100.00,
-            dailyLimit: null, // New field
+            dailyLimit: null,
             logs: []
         };
         USERS.push(user);
         res.status(201).json({ success: true, nanoKey, balance: user.balance, message: "Welcome to AtomAPI! You have ₹100 free credit." });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/v1/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = USERS.find(u => u.email === email && u.password === password);
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: "Invalid credentials" });
+        }
+
+        res.json({ success: true, nanoKey: user.nanoKey, balance: user.balance });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -50,7 +88,13 @@ app.get('/v1/wallet/balance', async (req, res) => {
     const user = USERS.find(u => u.nanoKey === nanokey);
     if (!user) return res.status(404).json({ error: "Invalid NanoKey" });
 
-    res.json({ balance: user.balance, logs: user.logs.slice(-5).reverse() });
+    // Expose email and nanoKey for the dashboard
+    res.json({
+        balance: user.balance,
+        logs: user.logs.slice(-5).reverse(),
+        email: user.email,
+        nanoKey: user.nanoKey
+    });
 });
 
 app.post('/v1/wallet/limit', async (req, res) => {
