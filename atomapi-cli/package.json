@@ -1,7 +1,7 @@
 {
   "name": "atomapi-sdk",
-  "version": "1.0.0",
-  "description": "Unified AI API Gateway SDK for NanoAPI",
+  "version": "1.0.1",
+  "description": "Unified AI API Gateway SDK for atomAPI",
   "main": "index.js",
   "bin": {
     "atomapi": "./bin/cli.js"

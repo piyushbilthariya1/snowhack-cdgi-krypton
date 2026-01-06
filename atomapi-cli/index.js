@@ -3,7 +3,7 @@ const axios = require("axios");
 class NanoAPI {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.baseUrl = "http://localhost:5000/api/v1/proxy";
+    this.baseUrl = "https://snowhack-cdgi-krypton.onrender.com/api/v1/proxy";
   }
 
   async generate(prompt) {
